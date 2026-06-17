@@ -8,9 +8,10 @@ Signals (priority order):
      - <2% → weak
   3. Pinnacle divergence — sharp vs public bookmaker split
   4. 百家欧赔/凯利 — qiu consensus + kelly anomaly
-  5. OU trend — over/under line movement direction
+  5. OU trend — over/under line movement (qiu daxiao primary, w500 supplement)
+  6. 欧亚分歧 — EU implied handicap vs actual AH line (qiu)
 
-Data: data/w500/{w500_mid}.json + data/qiu/overview/{qiu_fid}_*.json
+Data: data/w500/{w500_mid}.json + data/qiu/overview/{qiu_fid}_{ouzhi,yazhi,daxiao}.json
 
 Usage: python predict.py [date]   (default: first upcoming date)
 """
@@ -169,6 +170,167 @@ def analyze_ou(companies, cids):
         except: continue
     return moves
 
+def _qiu_handicap(row):
+    end = row.get("end") or row.get("first") or {}
+    init = row.get("first") or {}
+    h_init = init.get("handline") or init.get("handi", "")
+    h_end = end.get("handline") or end.get("handi", "")
+    return h_init, h_end
+
+def detect_ah_retreat_qiu(qiu_yazhi, cids=None):
+    retreat, total, details = 0, 0, []
+    if not qiu_yazhi or "rows" not in qiu_yazhi:
+        return {"count": 0, "total": 0, "details": [], "source": "qiu"}
+    allow = set(cids) if cids else None
+    for r in qiu_yazhi["rows"]:
+        if r.get("id") == "0":
+            continue
+        if allow and r.get("id") not in allow:
+            continue
+        h_init, h_end = _qiu_handicap(r)
+        if not h_init or not h_end:
+            continue
+        init_v = parse_handicap(str(h_init))
+        final_v = parse_handicap(str(h_end))
+        if init_v is None or final_v is None:
+            continue
+        total += 1
+        if abs(final_v) < abs(init_v) - 0.2:
+            retreat += 1
+            details.append(f"{r.get('name', r.get('id'))} {h_init}→{h_end}")
+    return {"count": retreat, "total": total, "details": details, "source": "qiu"}
+
+def detect_ah_upgrade_qiu(qiu_yazhi, cids=None):
+    upgrade, total, details = 0, 0, []
+    if not qiu_yazhi or "rows" not in qiu_yazhi:
+        return {"count": 0, "total": 0, "details": [], "source": "qiu"}
+    allow = set(cids) if cids else None
+    for r in qiu_yazhi["rows"]:
+        if r.get("id") == "0":
+            continue
+        if allow and r.get("id") not in allow:
+            continue
+        h_init, h_end = _qiu_handicap(r)
+        if not h_init or not h_end:
+            continue
+        init_v = parse_handicap(str(h_init))
+        final_v = parse_handicap(str(h_end))
+        if init_v is None or final_v is None:
+            continue
+        total += 1
+        if abs(final_v) > abs(init_v) + 0.2:
+            upgrade += 1
+            details.append(f"{r.get('name', r.get('id'))} {h_init}→{h_end}")
+    return {"count": upgrade, "total": total, "details": details, "source": "qiu"}
+
+def analyze_ou_qiu(qiu_daxiao):
+    moves = []
+    if not qiu_daxiao or "rows" not in qiu_daxiao:
+        return moves
+    for r in qiu_daxiao["rows"]:
+        if r.get("id") == "0":
+            continue
+        f, e = r.get("first") or {}, r.get("end") or r.get("first") or {}
+        try:
+            init_line = float(f.get("handi"))
+            final_line = float(e.get("handi"))
+            init_bw = float(f.get("big", 0) or 0)
+            final_bw = float(e.get("big", 0) or 0)
+        except (TypeError, ValueError):
+            continue
+        moves.append({
+            "name": r.get("name", r.get("id")),
+            "init_line": init_line,
+            "final_line": final_line,
+            "init_bw": init_bw,
+            "final_bw": final_bw,
+        })
+    return moves
+
+def pick_ah_signal(w500_sig, qiu_sig):
+    """Merge w500 timeseries + qiu 初终盘; count takes max of both sources."""
+    w500_sig = {**w500_sig, "source": "w500"}
+    count = max(w500_sig["count"], qiu_sig["count"])
+    total = max(w500_sig["total"], qiu_sig["total"])
+    if qiu_sig["count"] >= w500_sig["count"] and qiu_sig["details"]:
+        details, primary = qiu_sig["details"], "qiu"
+    elif w500_sig["details"]:
+        details, primary = w500_sig["details"], "w500"
+    else:
+        details, primary = qiu_sig["details"] or [], "mixed"
+    extra = [d for d in w500_sig["details"] + qiu_sig["details"] if d not in details]
+    details = (details + extra)[:15]
+    return {"count": count, "total": total, "details": details, "primary": primary, "w500": w500_sig, "qiu": qiu_sig}
+
+def ah_cross_validate(ar):
+    w, q = ar["w500"], ar["qiu"]
+    notes, confidence = [], "medium"
+    if q["total"] >= 3 and w["total"] < 2:
+        confidence = "high"
+        notes.append("亚盘:球球完整,w500残缺→信球球")
+    elif w["total"] >= 3 and q["total"] < 2:
+        notes.append("亚盘:以500时序为准")
+    if w["count"] > 0 and q["count"] > 0 and abs(w["count"] - q["count"]) >= 3:
+        confidence = "low"
+        notes.append(f"退盘家数分歧 w500={w['count']} qiu={q['count']}")
+    elif w["count"] == 0 and q["count"] >= 2:
+        confidence = "high"
+    return {"confidence": confidence, "notes": notes}
+
+def pick_ou_moves(w500_moves, qiu_moves):
+    if len(qiu_moves) >= len(w500_moves):
+        return qiu_moves, "qiu" if qiu_moves else "none"
+    return w500_moves, "w500" if w500_moves else "none"
+
+def detect_eu_ah_gap(qiu_eu, qiu_yazhi):
+    if not qiu_eu or not qiu_yazhi:
+        return None
+    avg_eu = next((r for r in qiu_eu["rows"] if r.get("id") == "0"), None)
+    if not avg_eu:
+        return None
+    ed = avg_eu.get("end") or avg_eu["first"]
+    try:
+        w, d, l = float(ed["win"]), float(ed["draw"]), float(ed["lost"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    p_h, p_a = 1 / w, 1 / l
+    tot = p_h + 1 / d + p_a
+    p_h, p_a = p_h / tot, p_a / tot
+    expected_ah = -(p_h - p_a) * 100 / 40.0
+    ah_vals = []
+    for r in qiu_yazhi.get("rows", []):
+        if r.get("id") == "0":
+            continue
+        ed_ah = r.get("end") or r.get("first") or {}
+        raw = ed_ah.get("handi")
+        if raw is None:
+            continue
+        try:
+            if "/" in str(raw):
+                parts = [float(x) for x in str(raw).split("/")]
+                ah_vals.append(sum(parts) / len(parts))
+            else:
+                ah_vals.append(float(raw))
+        except ValueError:
+            hline = ed_ah.get("handline", "")
+            v = parse_handicap(str(hline))
+            if v is not None:
+                ah_vals.append(v)
+    if not ah_vals:
+        return None
+    actual_ah = sum(ah_vals) / len(ah_vals)
+    gap = actual_ah - expected_ah
+    home_fav = p_h > p_a
+    if abs(gap) <= 0.25:
+        return None
+    return {
+        "gap": round(gap, 2),
+        "expected": round(expected_ah, 2),
+        "actual": round(actual_ah, 2),
+        "home_fav": home_fav,
+        "trap_home": gap > 0,
+    }
+
 def load_qiu(fid, kind):
     p = QIU_DIR / f"{fid}_{kind}.json"
     if not p.exists(): return None
@@ -241,9 +403,15 @@ def ah_overview(companies, cids):
 
 # ── Core Analysis Engine ──
 
-def analyze_match_core(m, data, qiu_eu):
+def analyze_match_core(m, data, qiu_eu, qiu_yazhi=None, qiu_daxiao=None):
     """Analyze a single match and return a structured dictionary of signals and predictions."""
-    companies = data.get("companies", {})
+    fid = m.get("qiu_fid")
+    if qiu_yazhi is None and fid:
+        qiu_yazhi = load_qiu(fid, "yazhi")
+    if qiu_daxiao is None and fid:
+        qiu_daxiao = load_qiu(fid, "daxiao")
+
+    companies = data.get("companies", {}) if data else {}
     score = m.get("score", "")
     
     result_actual = None
@@ -285,43 +453,77 @@ def analyze_match_core(m, data, qiu_eu):
     res["favorite"] = "win" if init_w < init_l else "lose"
 
     sq = detect_squeeze_draw(companies, ALL_KEY)
-    ar = detect_ah_retreat(companies, ALL_KEY)
-    au = detect_ah_upgrade(companies, ALL_KEY)
-    res["ah_moves"] = {"sq": sq, "ar": ar, "au": au}
+    ar_w = detect_ah_retreat(companies, ALL_KEY)
+    au_w = detect_ah_upgrade(companies, ALL_KEY)
+    ar_q = detect_ah_retreat_qiu(qiu_yazhi)
+    au_q = detect_ah_upgrade_qiu(qiu_yazhi)
+    ar = pick_ah_signal(ar_w, ar_q)
+    au = pick_ah_signal(au_w, au_q)
+    ah_xv = ah_cross_validate(ar)
+    res["ah_moves"] = {"sq": sq, "ar": ar, "au": au, "cross": ah_xv}
 
     sq_count = sq["count"]
     draw_drift = drift_all["avg"][1] if drift_all else 0
-    
+    ar_count = ar["count"]
+    au_count = au["count"]
     if sq_count >= 8:
         res["signals"].append({"tag": "A+", "msg": f"超级挤平({sq_count}家) → 强制覆盖推荐平局", "lv": "HIGH"})
         res["strategies"].append("super_squeeze")
     elif sq_count >= 7 and draw_drift > 1.0:
         res["signals"].append({"tag": "A+", "msg": f"中度挤平({sq_count}家) + 资金流入平局 → 高级平局信号", "lv": "HIGH"})
         res["strategies"].append("medium_squeeze_upgrade")
-    elif sq_count >= 2 and ar["count"] >= 2:
-        res["signals"].append({"tag": "A", "msg": f"挤平+退盘共振(挤{sq_count}退{ar['count']}) → 强平局信号", "lv": "HIGH"})
+    elif sq_count >= 2 and ar_count >= 2:
+        if ah_xv["confidence"] == "low":
+            res["signals"].append({"tag": "A", "msg": f"挤平+退盘(挤{sq_count}退{ar_count}) 但欧亚盘分歧→降级关注", "lv": "MED"})
+        else:
+            res["signals"].append({"tag": "A", "msg": f"挤平+退盘共振(挤{sq_count}退{ar_count}) → 强平局信号", "lv": "HIGH"})
+            res["strategies"].append("squeeze_retreat_strong")
+    elif sq_count >= 3 and ar_count >= 1:
+        res["signals"].append({"tag": "A", "msg": f"挤平{sq_count}家+退盘{ar_count}家 → 平局信号", "lv": "HIGH"})
         res["strategies"].append("squeeze_retreat_strong")
-    elif sq_count >= 3 and ar["count"] >= 1:
-        res["signals"].append({"tag": "A", "msg": f"挤平{sq_count}家+退盘{ar['count']}家 → 平局信号", "lv": "HIGH"})
-        res["strategies"].append("squeeze_retreat_strong")
-    elif ar["count"] >= 3:
-        res["signals"].append({"tag": "A", "msg": f"退盘{ar['count']}/{ar['total']}家 → 平局信号", "lv": "HIGH"})
+    elif ar_count >= 3:
+        res["signals"].append({"tag": "A", "msg": f"退盘{ar_count}/{ar['total']}家 → 平局信号", "lv": "HIGH"})
         res["strategies"].append("squeeze_retreat_strong")
     elif sq_count >= 3 or sq["avg_draw_ip"] > 1.5:
         res["signals"].append({"tag": "A", "msg": f"挤平明显({sq_count}家) → 防平", "lv": "MED"})
-    elif ar["count"] >= 2:
-        res["signals"].append({"tag": "A", "msg": f"退盘{ar['count']}家 → 热门信心不足", "lv": "MED"})
-    elif sq_count >= 1 or ar["count"] >= 1:
+    elif ar_count >= 2:
+        src = ar.get("primary", "?")
+        res["signals"].append({"tag": "A", "msg": f"退盘{ar_count}家({src}) → 热门信心不足", "lv": "MED"})
+    elif sq_count >= 1 or ar_count >= 1:
         res["signals"].append({"tag": "A", "msg": "轻微挤平/退盘 → 关注", "lv": "LOW"})
     else:
         res["signals"].append({"tag": "A", "msg": "无挤平退盘", "lv": "LOW"})
 
-    res["ou"] = analyze_ou(companies, ALL_KEY)
-    if res["ou"]:
-        line_drops = sum(1 for om in res["ou"] if om["final_line"] - om["init_line"] < -0.2)
-        line_rises = sum(1 for om in res["ou"] if om["final_line"] - om["init_line"] > 0.2)
-        if line_drops >= 2: res["signals"].append({"tag": "C", "msg": f"大小球降盘{line_drops}家 → 看小球", "lv": "MED"})
-        elif line_rises >= 2: res["signals"].append({"tag": "C", "msg": f"大小球升盘{line_rises}家 → 看大球", "lv": "MED"})
+    ou_w = analyze_ou(companies, ALL_KEY)
+    ou_q = analyze_ou_qiu(qiu_daxiao)
+    ou_moves, ou_src = pick_ou_moves(ou_w, ou_q)
+    res["ou"] = ou_moves
+    res["ou_source"] = ou_src
+    line_drops = line_rises = 0
+    if ou_moves:
+        line_drops = sum(1 for om in ou_moves if om["final_line"] - om["init_line"] < -0.2)
+        line_rises = sum(1 for om in ou_moves if om["final_line"] - om["init_line"] > 0.2)
+        if line_drops >= 2:
+            res["signals"].append({"tag": "C", "msg": f"大小球降盘{line_drops}家({ou_src}) → 看小球", "lv": "MED"})
+        elif line_rises >= 2:
+            res["signals"].append({"tag": "C", "msg": f"大小球升盘{line_rises}家({ou_src}) → 看大球", "lv": "MED"})
+        if line_drops >= 2 and ar_count >= 2:
+            res["signals"].append({"tag": "C+", "msg": f"退盘{ar_count}+降盘{line_drops}共振 → 防平+小球", "lv": "HIGH"})
+            res["strategies"].append("retreat_ou_drop")
+
+    eu_ah = detect_eu_ah_gap(qiu_eu, qiu_yazhi)
+    res["eu_ah"] = eu_ah
+    if eu_ah:
+        if eu_ah["trap_home"]:
+            res["signals"].append({"tag": "E", "msg": f"欧亚诱盘(偏差{eu_ah['gap']:+.2f}) 亚盘浅于欧赔预期 → 防上盘", "lv": "MED"})
+            if eu_ah["home_fav"] and 1.45 <= favorite_odds <= 2.20:
+                res["strategies"].append("eu_ah_trap")
+        else:
+            res["signals"].append({"tag": "E", "msg": f"欧亚真深盘(偏差{eu_ah['gap']:+.2f}) → 看好热门", "lv": "MED"})
+            res["strategies"].append("eu_ah_deep")
+
+    if ah_xv["notes"]:
+        res["signals"].append({"tag": "X", "msg": "; ".join(ah_xv["notes"]), "lv": "LOW" if ah_xv["confidence"] != "low" else "MED"})
 
     qiu_sig = analyze_qiu_eu(qiu_eu)
     res["qiu"] = qiu_sig
@@ -364,11 +566,14 @@ def analyze_match_core(m, data, qiu_eu):
             if s_dom != p_dom:
                 res["signals"].append({"tag": "B+", "msg": f"PIN分歧 → PIN看{RESULT_CN[s_dom]}(分歧时PIN更准)", "lv": "MED"})
 
-        if au["count"] >= 4 and not kelly_shield and dom_val > 1.0:
-            is_fake_upgrade = True
-            fake_upgrade_anti = [l for l in LABELS if l != dom_label]
-            res["strategies"].append("fake_upgrade")
-            res["signals"].append({"tag": "A+", "msg": f"深盘诱多陷阱 → 坚决反向", "lv": "HIGH"})
+        if au_count >= 4 and not kelly_shield and dom_val > 1.0:
+            # 诱多陷阱仅适用于中等热门(1.45-2.2); 深盘/大热门升盘仍穿盘
+            au_w = au.get("w500", {}).get("count", 0)
+            if 1.45 <= favorite_odds <= 2.20 and (au_w >= 2 or au.get("primary") == "w500"):
+                is_fake_upgrade = True
+                fake_upgrade_anti = [l for l in LABELS if l != dom_label]
+                res["strategies"].append("fake_upgrade")
+                res["signals"].append({"tag": "A+", "msg": f"深盘诱多陷阱 → 坚决反向", "lv": "HIGH"})
 
         if mag > 3:
             s_init_w = drift_sharp["per_co"][0]["init"][0] if drift_sharp else 0
@@ -397,23 +602,29 @@ def analyze_match_core(m, data, qiu_eu):
             res["final_pred"] = kelly_shield_target
             res["primary_logic"] = f"🛡️ 极端悬殊凯利防爆罩 → 防超级大冷: {RESULT_CN[kelly_shield_target]}"
     elif has_squeeze_retreat or "medium_squeeze_upgrade" in res["strategies"]:
-        # 主队超热门浅退盘(球半→一球/球半): 退盘多为诱下盘，6/17阿根廷/奥地利验证
         if res["favorite"] == "win" and favorite_odds > 0 and favorite_odds < 1.45:
             res["final_pred"] = "win"
             res["primary_logic"] = f"🏠 主队超热门({favorite_odds:.2f})浅退盘 → 仍看主胜"
             res["strategies"].append("home_fav_shallow_retreat")
+        elif "eu_ah_trap" in res["strategies"] and res["favorite"] == "win":
+            res["final_pred"] = "draw"
+            res["primary_logic"] = f"🪤 欧亚诱盘+退盘共振 → 防平局 (亚盘浅于欧赔预期)"
         else:
             res["final_pred"] = "draw"
-            res["primary_logic"] = "⚡ 挤平+退盘共振/中度挤平升格 → 平局 (优先级极高)"
+            src = ar.get("primary", "qiu")
+            res["primary_logic"] = f"⚡ 挤平+退盘共振({src}) → 平局 (优先级极高)"
     elif is_fake_upgrade:
         res["final_pred"] = "draw"
-        res["primary_logic"] = f"🪤 深盘诱多陷阱 — 亚盘升盘({au['count']}家) + 资金流入 + 无凯利保护"
+        res["primary_logic"] = f"🪤 深盘诱多陷阱 — 亚盘升盘({au_count}家) + 资金流入 + 无凯利保护"
+    elif "eu_ah_deep" in res["strategies"] and not res["recommendation"]:
+        res["final_pred"] = res["favorite"]
+        res["primary_logic"] = f"📐 欧亚真深盘 → 跟热门 {RESULT_CN[res['favorite']]}"
     elif res["recommendation"]:
         rtype, rdir, rmag = res["recommendation"]
         if rtype == "contrarian":
             non_dom = [(LABELS[i], drift_all["avg"][i]) for i in range(3) if LABELS[i] != rdir]
             non_dom.sort(key=lambda x: x[1], reverse=True)
-            res["final_pred"] = "draw" if (sq["count"] >= 1 or ar["count"] >= 1) else non_dom[0][0]
+            res["final_pred"] = "draw" if (sq_count >= 1 or ar_count >= 1) else non_dom[0][0]
             res["primary_logic"] = f"⚡ IP漂移反向 — 资金涌入{RESULT_CN[rdir]}({rmag:.1f}%), 反向"
         else:
             res["final_pred"] = rdir
@@ -453,11 +664,14 @@ def display_match(res):
     print(f"    挤平: {sq['count']}/{sq['total']}家平赔下降 (平局IP均漂{sq['avg_draw_ip']:+.2f}%)")
     for d in sq["details"]: print(f"      {d}")
     if ar["count"] > 0:
-        print(f"    退盘: {ar['count']}/{ar['total']}家盘口回退")
+        print(f"    退盘: {ar['count']}/{ar['total']}家 [{ar.get('primary', '')}]")
         for d in ar["details"]: print(f"      {d}")
     if au["count"] > 0:
-        print(f"    升盘: {au['count']}/{au['total']}家盘口升级")
+        print(f"    升盘: {au['count']}/{au['total']}家 [{au.get('primary', '')}]")
         for d in au["details"]: print(f"      {d}")
+    if res["ah_moves"].get("cross", {}).get("notes"):
+        for n in res["ah_moves"]["cross"]["notes"]:
+            print(f"    ⚠ {n}")
 
     print(f"\n  【信号B: IP漂移】")
     if res["eu"]["all"]:
@@ -479,7 +693,8 @@ def display_match(res):
             print(f"    {r['name']:<8} {r['init']} → {r['final']}  [{r['n']}变]")
 
     if res["ou"]:
-        print(f"\n  【大小球】")
+        ou_src = res.get("ou_source", "w500")
+        print(f"\n  【大小球 ({ou_src})】")
         for om in res["ou"]:
             delta = om["final_line"] - om["init_line"]
             arrow = "↓" if delta < 0 else ("↑" if delta > 0 else "→")
@@ -542,8 +757,10 @@ def main():
         
         fid = m.get("qiu_fid")
         qiu_eu = load_qiu(fid, "ouzhi") if fid else None
+        qiu_yazhi = load_qiu(fid, "yazhi") if fid else None
+        qiu_daxiao = load_qiu(fid, "daxiao") if fid else None
         
-        res = analyze_match_core(m, data, qiu_eu)
+        res = analyze_match_core(m, data, qiu_eu, qiu_yazhi, qiu_daxiao)
         display_match(res)
         
         if res["score"] and res["final_pred"]:

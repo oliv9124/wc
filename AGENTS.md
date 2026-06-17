@@ -20,6 +20,15 @@ python predict.py 2026-06-18
 # Update finished match scores
 python collectors/update_scores.py
 
+# Validate data completeness
+python tools/validate_data.py --finished
+
+# Re-fetch empty 500.com AH/OU (needs network)
+python collectors/collect_500.py --repair --finished
+
+# Refresh qiu overview for finished matches
+python collectors/collect_qiu.py --finished --force
+
 # Regenerate HTML reports → output/
 python reports/build_predict_report.py
 python reports/build_dashboard.py

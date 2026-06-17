@@ -33,8 +33,10 @@ def build_report():
         data = load_match(mid)
         if not data: continue
         qiu_eu = load_qiu(fid, "ouzhi") if fid else None
+        qiu_yazhi = load_qiu(fid, "yazhi") if fid else None
+        qiu_daxiao = load_qiu(fid, "daxiao") if fid else None
         
-        res = analyze_match_core(m, data, qiu_eu)
+        res = analyze_match_core(m, data, qiu_eu, qiu_yazhi, qiu_daxiao)
         stats["total"] += 1
         
         is_finished = m.get("status") == "finished" and bool(m.get("score"))
