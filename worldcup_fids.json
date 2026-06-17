@@ -202,8 +202,9 @@
       "group": "I",
       "home": "法国",
       "away": "塞内加尔",
-      "status": "upcoming",
-      "w500_mid": "1359212"
+      "status": "finished",
+      "w500_mid": "1359212",
+      "score": "3:1"
     },
     {
       "qiu_fid": "1299625",
@@ -213,8 +214,9 @@
       "group": "D",
       "home": "伊拉克",
       "away": "挪威",
-      "status": "upcoming",
-      "w500_mid": "1359248"
+      "status": "finished",
+      "w500_mid": "1359248",
+      "score": "1:4"
     },
     {
       "qiu_fid": "1279684",
@@ -224,8 +226,9 @@
       "group": "D",
       "home": "阿根廷",
       "away": "阿尔及利亚",
-      "status": "upcoming",
-      "w500_mid": "1359215"
+      "status": "finished",
+      "w500_mid": "1359215",
+      "score": "3:0"
     },
     {
       "qiu_fid": "1279685",
@@ -235,8 +238,9 @@
       "group": "D",
       "home": "奥地利",
       "away": "约旦",
-      "status": "upcoming",
-      "w500_mid": "1359251"
+      "status": "finished",
+      "w500_mid": "1359251",
+      "score": "3:1"
     },
     {
       "qiu_fid": "1299620",

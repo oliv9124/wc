@@ -397,8 +397,14 @@ def analyze_match_core(m, data, qiu_eu):
             res["final_pred"] = kelly_shield_target
             res["primary_logic"] = f"🛡️ 极端悬殊凯利防爆罩 → 防超级大冷: {RESULT_CN[kelly_shield_target]}"
     elif has_squeeze_retreat or "medium_squeeze_upgrade" in res["strategies"]:
-        res["final_pred"] = "draw"
-        res["primary_logic"] = "⚡ 挤平+退盘共振/中度挤平升格 → 平局 (优先级极高)"
+        # 主队超热门浅退盘(球半→一球/球半): 退盘多为诱下盘，6/17阿根廷/奥地利验证
+        if res["favorite"] == "win" and favorite_odds > 0 and favorite_odds < 1.45:
+            res["final_pred"] = "win"
+            res["primary_logic"] = f"🏠 主队超热门({favorite_odds:.2f})浅退盘 → 仍看主胜"
+            res["strategies"].append("home_fav_shallow_retreat")
+        else:
+            res["final_pred"] = "draw"
+            res["primary_logic"] = "⚡ 挤平+退盘共振/中度挤平升格 → 平局 (优先级极高)"
     elif is_fake_upgrade:
         res["final_pred"] = "draw"
         res["primary_logic"] = f"🪤 深盘诱多陷阱 — 亚盘升盘({au['count']}家) + 资金流入 + 无凯利保护"
