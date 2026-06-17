@@ -1,0 +1,630 @@
+{
+  "qiuqiushidao": {
+    "total": 111,
+    "source": "complist API (c=odds&a=complist, POST tt=2&type=1)",
+    "default_15": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      9,
+      16,
+      122,
+      140,
+      280,
+      293,
+      348,
+      651,
+      1055
+    ],
+    "companies": {
+      "1355": "108bet",
+      "1383": "联博",
+      "1380": "BetVictor",
+      "1392": "BetInAsia",
+      "1331": "CoolBet",
+      "1395": "FEZbet",
+      "1396": "Foxbet",
+      "1348": "GGBET",
+      "1341": "Jabet",
+      "1326": "Sekabet",
+      "16": "10BET",
+      "1259": "1xBet",
+      "502": "12BET (壹貳博)",
+      "863": "18Bet",
+      "30": "5Dimes",
+      "451": "888Sport",
+      "5": "澳门",
+      "770": "奥地利博彩",
+      "3": "Bet365",
+      "11": "Bwin",
+      "18": "必发",
+      "22": "BETDAQ",
+      "67": "Betsson",
+      "1242": "Betfair AUS",
+      "65": "BetSense",
+      "70": "Betway(必威)",
+      "350": "Bet-at-home",
+      "453": "Betsson Sportsbook",
+      "673": "Betcity",
+      "739": "Bestbet",
+      "747": "Bovada",
+      "772": "Betflag",
+      "921": "Betradar",
+      "1187": "Betfair SB",
+      "1283": "Boyle Sports",
+      "14": "Coral",
+      "698": "Comeon!",
+      "1185": "CMD368.com",
+      "92": "Dansk Tipstjeneste",
+      "94": "Denmark",
+      "385": "Digibet",
+      "662": "Dafabet (大发)",
+      "676": "Efbet",
+      "920": "E6bet",
+      "923": "Egobet",
+      "1120": "FUN88 (乐天堂)",
+      "108": "Fonbet",
+      "725": "FavBet",
+      "578": "Giocodigitale.it",
+      "280": "皇冠",
+      "591": "Hrvatska Lutrija",
+      "4": "Interwetten",
+      "127": "IBCBET (沙巴)",
+      "132": "Intertops",
+      "544": "Iddaa",
+      "989": "Inkabet",
+      "1": "竞彩官方",
+      "348": "金宝博",
+      "2": "立博",
+      "651": "利记",
+      "665": "Luckybet",
+      "1020": "LUXBET",
+      "140": "Mansion88 (明升)",
+      "142": "Matchbook",
+      "418": "Mozzart",
+      "679": "Marathonbet",
+      "686": "Marathon(马博)",
+      "155": "Norway",
+      "1022": "Napoli",
+      "12": "Oddset",
+      "1303": "Otobet",
+      "1055": "Pinnacle平博",
+      "163": "Paddy Power",
+      "625": "Parionsweb",
+      "626": "PMU",
+      "823": "PAF.es",
+      "1047": "Pagebet",
+      "1179": "PlanetWin365",
+      "177": "Redbet",
+      "1260": "瑞丰国际",
+      "8": "SNAI",
+      "275": "SportingBet (博天堂)",
+      "734": "Smarkets",
+      "195": "Skybet",
+      "216": "Stanleybet",
+      "223": "Svenska Spel",
+      "227": "Synot TIP",
+      "510": "Singlebet (SB)",
+      "650": "Sportsbet.com.au",
+      "656": "Sisal",
+      "757": "Sazkashop",
+      "812": "Stoiximan",
+      "1141": "Sirbobet",
+      "1152": "SportYes.it",
+      "234": "Tipsport",
+      "310": "Tipsport.sk",
+      "391": "Tipico",
+      "688": "Tempobet",
+      "291": "Unibet (优胜客)",
+      "1109": "VBet",
+      "250": "Veikkaus",
+      "1162": "Vwin",
+      "293": "威廉希尔",
+      "6": "伟德",
+      "537": "Wewbet (盈禾)",
+      "122": "香港马会",
+      "370": "新球",
+      "1251": "X-TiP",
+      "9": "易胜博",
+      "337": "永利",
+      "1248": "优德"
+    }
+  },
+  "okooo": {
+    "total": 122,
+    "source": "odds/ajax pagination (page=0..4, 30 per page)",
+    "companies": {
+      "24": {
+        "name": "99家平均",
+        "country": "本站"
+      },
+      "2": {
+        "name": "竞彩官方",
+        "country": "中国"
+      },
+      "14": {
+        "name": "威廉.希尔",
+        "country": "英国"
+      },
+      "82": {
+        "name": "立博",
+        "country": "英国"
+      },
+      "27": {
+        "name": "Bet365",
+        "country": "英国"
+      },
+      "43": {
+        "name": "Interwetten",
+        "country": "马耳他"
+      },
+      "25": {
+        "name": "SNAI",
+        "country": "意大利"
+      },
+      "94": {
+        "name": "bwin",
+        "country": "奥地利"
+      },
+      "131": {
+        "name": "香港马会",
+        "country": "中国香港"
+      },
+      "65": {
+        "name": "伟德国际",
+        "country": "英国"
+      },
+      "35": {
+        "name": "易胜博",
+        "country": "英国"
+      },
+      "37": {
+        "name": "Expekt",
+        "country": "英国"
+      },
+      "180": {
+        "name": "Unibet",
+        "country": "马耳他"
+      },
+      "159": {
+        "name": "博天堂",
+        "country": "英国"
+      },
+      "19": {
+        "name": "必发",
+        "country": "英国"
+      },
+      "84": {
+        "name": "澳门彩票",
+        "country": "中国澳门"
+      },
+      "116": {
+        "name": "Coral",
+        "country": "英国"
+      },
+      "150": {
+        "name": "Norway",
+        "country": "挪威"
+      },
+      "49": {
+        "name": "Paddy Power",
+        "country": "爱尔兰"
+      },
+      "157": {
+        "name": "Skybet",
+        "country": "英国"
+      },
+      "307": {
+        "name": "Mansion 88",
+        "country": "菲律宾"
+      },
+      "250": {
+        "name": "皇冠",
+        "country": "中国澳门"
+      },
+      "220": {
+        "name": "沙巴",
+        "country": "哥斯达黎加"
+      },
+      "280": {
+        "name": "利记",
+        "country": "菲律宾"
+      },
+      "322": {
+        "name": "金宝博",
+        "country": "菲律宾"
+      },
+      "202": {
+        "name": "10Bet",
+        "country": "英国"
+      },
+      "406": {
+        "name": "12bet.com",
+        "country": "菲律宾"
+      },
+      "578": {
+        "name": "18Bet",
+        "country": "马耳他"
+      },
+      "516": {
+        "name": "1Bet",
+        "country": "库拉索"
+      },
+      "744": {
+        "name": "1xbet",
+        "country": "俄罗斯"
+      },
+      "914": {
+        "name": "22Bet",
+        "country": "-"
+      },
+      "370": {
+        "name": "888Sport",
+        "country": "直布罗陀"
+      },
+      "78": {
+        "name": "bet-at-home",
+        "country": "奥地利"
+      },
+      "802": {
+        "name": "Bet25",
+        "country": "马耳他"
+      },
+      "331": {
+        "name": "Bet3000",
+        "country": "英国"
+      },
+      "813": {
+        "name": "Bet9ja",
+        "country": "-"
+      },
+      "846": {
+        "name": "Betboro",
+        "country": "-"
+      },
+      "524": {
+        "name": "Betfair AUS",
+        "country": "澳大利亚"
+      },
+      "879": {
+        "name": "Betfair Exchange",
+        "country": "-"
+      },
+      "699": {
+        "name": "Betfair SB",
+        "country": "英国"
+      },
+      "602": {
+        "name": "Betflag",
+        "country": "意大利"
+      },
+      "921": {
+        "name": "BetKing",
+        "country": "-"
+      },
+      "927": {
+        "name": "BetPlay",
+        "country": "-"
+      },
+      "722": {
+        "name": "BetRebels",
+        "country": "-"
+      },
+      "545": {
+        "name": "BetSonic",
+        "country": "-"
+      },
+      "74": {
+        "name": "Betsson",
+        "country": "英国"
+      },
+      "243": {
+        "name": "BetssonSportsb",
+        "country": "英国"
+      },
+      "560": {
+        "name": "BetVictor",
+        "country": "直布罗陀"
+      },
+      "245": {
+        "name": "Betway",
+        "country": "马耳他"
+      },
+      "106": {
+        "name": "BoDog",
+        "country": "哥斯达黎加"
+      },
+      "108": {
+        "name": "Boylesports",
+        "country": "爱尔兰"
+      },
+      "335": {
+        "name": "BWin.it",
+        "country": "意大利"
+      },
+      "112": {
+        "name": "Cash Point",
+        "country": "马耳他"
+      },
+      "645": {
+        "name": "CMD368.com",
+        "country": "中国澳门"
+      },
+      "918": {
+        "name": "colbet",
+        "country": "-"
+      },
+      "530": {
+        "name": "ComeOn",
+        "country": "-"
+      },
+      "795": {
+        "name": "CoolBet",
+        "country": "爱沙尼亚"
+      },
+      "522": {
+        "name": "Dafabet",
+        "country": "菲律宾"
+      },
+      "33": {
+        "name": "Tipstjeneste",
+        "country": "丹麦"
+      },
+      "118": {
+        "name": "Denmark",
+        "country": "丹麦"
+      },
+      "571": {
+        "name": "Domusbet.it",
+        "country": "意大利"
+      },
+      "526": {
+        "name": "Efbet",
+        "country": "马耳他"
+      },
+      "340": {
+        "name": "Eurobet.it",
+        "country": "意大利"
+      },
+      "547": {
+        "name": "FavBet",
+        "country": "库拉索"
+      },
+      "38": {
+        "name": "Fonbet",
+        "country": "俄罗斯"
+      },
+      "455": {
+        "name": "Germania Sport",
+        "country": "德国"
+      },
+      "390": {
+        "name": "gioco",
+        "country": "意大利"
+      },
+      "40": {
+        "name": "GoldBet",
+        "country": "奥地利"
+      },
+      "470": {
+        "name": "Lutrija",
+        "country": "克罗地亚"
+      },
+      "454": {
+        "name": "iddaa",
+        "country": "土耳其"
+      },
+      "949": {
+        "name": "InkaBet",
+        "country": "-"
+      },
+      "42": {
+        "name": "Intertops",
+        "country": "安提瓜和"
+      },
+      "725": {
+        "name": "Ladbrokes.au",
+        "country": "-"
+      },
+      "729": {
+        "name": "Ladbrokes.au",
+        "country": "-"
+      },
+      "956": {
+        "name": "LeoVegas.it",
+        "country": "-"
+      },
+      "773": {
+        "name": "LeoVegas",
+        "country": "-"
+      },
+      "824": {
+        "name": "Liga Stavok",
+        "country": "-"
+      },
+      "945": {
+        "name": "LoterieRomande",
+        "country": "-"
+      },
+      "593": {
+        "name": "Luckia.es",
+        "country": "西班牙"
+      },
+      "538": {
+        "name": "Marathon",
+        "country": "库拉索"
+      },
+      "669": {
+        "name": "Marathonbet",
+        "country": "俄罗斯"
+      },
+      "206": {
+        "name": "Matchbook",
+        "country": "英国"
+      },
+      "275": {
+        "name": "MeridianBet",
+        "country": "爱尔兰"
+      },
+      "348": {
+        "name": "Mozzart",
+        "country": "塞尔维亚"
+      },
+      "734": {
+        "name": "Netbet.it",
+        "country": "-"
+      },
+      "149": {
+        "name": "Norsk Tipping",
+        "country": "挪威"
+      },
+      "489": {
+        "name": "Novibet",
+        "country": "英国"
+      },
+      "947": {
+        "name": "OlyBet",
+        "country": "-"
+      },
+      "581": {
+        "name": "Paf.es",
+        "country": "西班牙"
+      },
+      "329": {
+        "name": "PariMatch",
+        "country": "俄罗斯"
+      },
+      "486": {
+        "name": "Parionsweb",
+        "country": "法国"
+      },
+      "50": {
+        "name": "Pinnacle",
+        "country": "英国"
+      },
+      "696": {
+        "name": "PlanetWin365",
+        "country": "德国"
+      },
+      "487": {
+        "name": "PMU",
+        "country": "法国"
+      },
+      "232": {
+        "name": "Sazka",
+        "country": "捷克"
+      },
+      "517": {
+        "name": "Sisal",
+        "country": "意大利"
+      },
+      "942": {
+        "name": "SportPesa.it",
+        "country": "-"
+      },
+      "316": {
+        "name": "Sportsbet.au",
+        "country": "澳大利亚"
+      },
+      "59": {
+        "name": "SportsTAB",
+        "country": "澳大利亚"
+      },
+      "920": {
+        "name": "SportyBet",
+        "country": "-"
+      },
+      "641": {
+        "name": "SportYes.it",
+        "country": "意大利"
+      },
+      "588": {
+        "name": "Spreadex",
+        "country": "-"
+      },
+      "60": {
+        "name": "Stanleybet",
+        "country": "马耳他"
+      },
+      "62": {
+        "name": "Svenska Spel",
+        "country": "瑞典"
+      },
+      "931": {
+        "name": "Tab.co.nz",
+        "country": "-"
+      },
+      "283": {
+        "name": "Tipico",
+        "country": "奥地利"
+      },
+      "284": {
+        "name": "Tipsport-Sk",
+        "country": "斯洛伐克"
+      },
+      "174": {
+        "name": "Tipsport",
+        "country": "捷克"
+      },
+      "558": {
+        "name": "TonyBet",
+        "country": "爱沙尼亚"
+      },
+      "542": {
+        "name": "Unibet.fr",
+        "country": "法国"
+      },
+      "568": {
+        "name": "VBet",
+        "country": "库拉索"
+      },
+      "182": {
+        "name": "Veikkaus",
+        "country": "芬兰"
+      },
+      "519": {
+        "name": "wewbet",
+        "country": "菲律宾"
+      },
+      "256": {
+        "name": "Winamax.com",
+        "country": "法国"
+      },
+      "874": {
+        "name": "WinlineBet",
+        "country": "-"
+      },
+      "922": {
+        "name": "WPlay",
+        "country": "-"
+      },
+      "608": {
+        "name": "Bovada",
+        "country": "拉脱维亚"
+      },
+      "968": {
+        "name": "Comeon.dk",
+        "country": "-"
+      },
+      "967": {
+        "name": "Ladbrokes.be",
+        "country": "-"
+      },
+      "622": {
+        "name": "Netbet.fr",
+        "country": "法国"
+      },
+      "614": {
+        "name": "stoiximan",
+        "country": "希腊"
+      },
+      "965": {
+        "name": "Unibet.se",
+        "country": "-"
+      }
+    }
+  }
+}

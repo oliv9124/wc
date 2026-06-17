@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.claude/
+*.log
+
+# Local scratch / experiments (not needed in cloud)
+scratch/
+
+# Sensitive / local browser data
+archive/okooo_cookie.txt
+archive/_cookies_tmp.db
+**/*cookie*
+**/*.db
+
+# Optional generated HTML — regenerate with reports/build_*.py
+# output/

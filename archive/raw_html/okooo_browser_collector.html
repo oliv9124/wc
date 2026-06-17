@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>澳客变动历史采集器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui;background:#0d1117;color:#c9d1d9;padding:20px;max-width:900px;margin:0 auto}
+h1{font-size:20px;color:#58a6ff;margin-bottom:8px}
+.note{color:#8b949e;font-size:13px;margin-bottom:16px}
+button{background:#238636;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:15px;cursor:pointer;margin:8px 8px 8px 0}
+button:hover{background:#2ea043}
+button:disabled{background:#21262d;color:#484f58;cursor:not-allowed}
+#log{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;max-height:500px;overflow-y:auto;white-space:pre-wrap;margin-top:12px}
+.ok{color:#3fb950}.err{color:#f85149}.warn{color:#d29922}.info{color:#58a6ff}
+.progress{background:#21262d;border-radius:4px;height:24px;margin:12px 0;overflow:hidden;position:relative}
+.progress-bar{background:#238636;height:100%;transition:width 0.3s}
+.progress-text{position:absolute;top:0;left:0;right:0;text-align:center;line-height:24px;font-size:12px;color:#fff}
+select{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:6px 12px;border-radius:6px;font-size:14px;margin-right:8px}
+</style>
+</head>
+<body>
+<h1>澳客赔率变动历史 · 批量采集器</h1>
+<p class="note">此页面需要在 <b>okooo.com</b> 域名下运行（使用已登录的浏览器 Cookie）。<br>
+采集完成后自动下载 JSON 文件。</p>
+
+<div>
+  <label>采集类型：</label>
+  <select id="type">
+    <option value="odds">欧赔变动</option>
+    <option value="ah">亚盘变动</option>
+    <option value="ou">大小球变动</option>
+  </select>
+  <button id="btnStart" onclick="startCollection()">开始采集</button>
+  <button id="btnStop" onclick="stopCollection()" disabled>停止</button>
+  <button id="btnDownload" onclick="downloadData()" disabled>下载 JSON</button>
+</div>
+
+<div class="progress" id="progressWrap" style="display:none">
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="progress-text" id="progressText">0%</div>
+</div>
+
+<div id="log"></div>
+
+<script>
+// ── Match configuration ──
+const MATCHES = [
+  {mid:"1315851",home:"墨西哥",away:"南非",date:"2026-06-12"},
+  {mid:"1315852",home:"韩国",away:"捷克",date:"2026-06-12"},
+  {mid:"1315861",home:"加拿大",away:"波黑",date:"2026-06-13"},
+  {mid:"1315867",home:"美国",away:"巴拉圭",date:"2026-06-13"},
+  {mid:"1315862",home:"卡塔尔",away:"瑞士",date:"2026-06-14"},
+  {mid:"1315869",home:"巴西",away:"摩洛哥",date:"2026-06-14"},
+  {mid:"1315870",home:"海地",away:"苏格兰",date:"2026-06-14"},
+  {mid:"1315868",home:"澳大利亚",away:"土耳其",date:"2026-06-14"},
+  {mid:"1315881",home:"德国",away:"库拉索",date:"2026-06-15"},
+  {mid:"1315875",home:"荷兰",away:"日本",date:"2026-06-15"},
+  {mid:"1315883",home:"科特迪瓦",away:"厄瓜多尔",date:"2026-06-15"},
+  {mid:"1315876",home:"瑞典",away:"突尼斯",date:"2026-06-15"},
+  {mid:"1315893",home:"西班牙",away:"佛得角",date:"2026-06-16"},
+  {mid:"1315887",home:"比利时",away:"埃及",date:"2026-06-16"},
+  {mid:"1315894",home:"沙特",away:"乌拉圭",date:"2026-06-16"},
+  {mid:"1315888",home:"伊朗",away:"新西兰",date:"2026-06-16"},
+  {mid:"1316301",home:"法国",away:"塞内加尔",date:"2026-06-17"},
+  {mid:"1316302",home:"伊拉克",away:"挪威",date:"2026-06-17"},
+  {mid:"1316307",home:"阿根廷",away:"阿尔及利亚",date:"2026-06-17"},
+  {mid:"1316308",home:"奥地利",away:"约旦",date:"2026-06-17"},
+  {mid:"1316313",home:"葡萄牙",away:"刚果(金)",date:"2026-06-18"},
+  {mid:"1316319",home:"英格兰",away:"克罗地亚",date:"2026-06-18"},
+  {mid:"1316320",home:"加纳",away:"巴拿马",date:"2026-06-18"},
+  {mid:"1316314",home:"乌兹别克",away:"哥伦比亚",date:"2026-06-18"},
+];
+
+// Key companies
+const KEY_CIDS = [
+  ["14","威廉希尔"],["82","Bet365"],["27","立博"],["25","bwin"],
+  ["84","Coral"],["49","PaddyPower"],["157","Skybet"],["50","Pinnacle"],
+  ["879","BetfairExch"],["560","BetVictor"],["65","皇冠"],
+  ["19","必发"],["43","Interwetten"],["94","SNAI"],
+  ["116","易胜博"],["245","Betway"],["538","Marathon"],["24","99家平均"],
+];
+
+let stopped = false;
+let allData = {};
+
+const logEl = document.getElementById('log');
+function log(msg, cls='') {
+  const line = document.createElement('div');
+  line.className = cls;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function updateProgress(current, total, label) {
+  const pct = Math.round(current / total * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${pct}% — ${label}`;
+}
+
+function fetchChange(mid, cid, type) {
+  const pathMap = {odds: 'odds', ah: 'ah', ou: 'overunder'};
+  const urlPath = pathMap[type] || 'odds';
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `/soccer/match/${mid}/${urlPath}/change/${cid}/`);
+    xhr.responseType = 'arraybuffer';
+    xhr.timeout = 15000;
+    xhr.onload = () => {
+      try {
+        const html = new TextDecoder('gbk').decode(xhr.response);
+        if (html.includes('captcha') || html.includes('WAF_NC')) {
+          resolve({error: 'WAF'});
+          return;
+        }
+        if (html.includes('账号登录') && !html.includes('变化列表')) {
+          resolve({error: 'login_required'});
+          return;
+        }
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const rows = [];
+        doc.querySelectorAll('tr').forEach(tr => {
+          const tds = Array.from(tr.querySelectorAll('td'));
+          if (tds.length >= 5) {
+            const t = tds[0]?.textContent?.trim() || '';
+            const v1 = tds[2]?.textContent?.trim() || '';
+            if (v1 && /[\d.]/.test(v1)) {
+              rows.push({
+                t: t,
+                v: [v1, tds[3]?.textContent?.trim()||'', tds[4]?.textContent?.trim()||''],
+                p: tds.length >= 8 ? [tds[5]?.textContent?.trim()||'', tds[6]?.textContent?.trim()||'', tds[7]?.textContent?.trim()||''] : [],
+                k: tds.length >= 11 ? [tds[8]?.textContent?.trim()||'', tds[9]?.textContent?.trim()||'', tds[10]?.textContent?.trim()||''] : [],
+                pay: tds.length >= 12 ? tds[11]?.textContent?.trim()||'' : ''
+              });
+            }
+          }
+        });
+        resolve({rows});
+      } catch(e) {
+        resolve({error: e.message});
+      }
+    };
+    xhr.onerror = () => resolve({error: 'network'});
+    xhr.ontimeout = () => resolve({error: 'timeout'});
+    xhr.send();
+  });
+}
+
+async function startCollection() {
+  const type = document.getElementById('type').value;
+  stopped = false;
+  allData = {type, collected: new Date().toISOString(), matches: {}};
+
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnStop').disabled = false;
+  document.getElementById('btnDownload').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  logEl.innerHTML = '';
+
+  const total = MATCHES.length * KEY_CIDS.length;
+  let done = 0;
+  let loginFail = false;
+
+  log(`开始采集 ${type} 变动历史...`, 'info');
+  log(`共 ${MATCHES.length} 场比赛 × ${KEY_CIDS.length} 家公司 = ${total} 个请求`, 'info');
+
+  for (const match of MATCHES) {
+    if (stopped) break;
+    const label = `${match.home} vs ${match.away}`;
+    log(`\n━━ ${match.date} ${label} (mid=${match.mid}) ━━`, 'info');
+
+    const matchData = {label, date: match.date, companies: {}};
+
+    for (const [cid, name] of KEY_CIDS) {
+      if (stopped) break;
+      updateProgress(done, total, `${label} · ${name}`);
+
+      const result = await fetchChange(match.mid, cid, type);
+
+      if (result.error) {
+        if (result.error === 'login_required') {
+          log(`✗ ${name}: 需要登录！请先在澳客登录`, 'err');
+          loginFail = true;
+          break;
+        } else if (result.error === 'WAF') {
+          log(`⚠ ${name}: WAF拦截，跳过`, 'warn');
+        } else {
+          log(`✗ ${name}: ${result.error}`, 'err');
+        }
+      } else if (result.rows && result.rows.length > 0) {
+        matchData.companies[cid] = {name, changes: result.rows};
+        log(`✓ ${name}: ${result.rows.length} 条变动`, 'ok');
+      } else {
+        // No data for this company - normal
+      }
+
+      done++;
+      await new Promise(r => setTimeout(r, 200)); // Rate limit
+    }
+
+    if (loginFail) {
+      log('\n⚠ 检测到未登录，请先登录 okooo.com 后再试', 'err');
+      break;
+    }
+
+    allData.matches[match.mid] = matchData;
+  }
+
+  updateProgress(done, total, stopped ? '已停止' : '完成！');
+  log(`\n${'='.repeat(40)}`, 'info');
+
+  const matchCount = Object.keys(allData.matches).length;
+  let totalChanges = 0;
+  for (const m of Object.values(allData.matches)) {
+    for (const c of Object.values(m.companies)) {
+      totalChanges += c.changes.length;
+    }
+  }
+  log(`采集完成: ${matchCount} 场比赛, ${totalChanges} 条变动记录`, 'ok');
+
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('btnDownload').disabled = false;
+
+  // Auto download
+  if (!stopped && !loginFail) downloadData();
+}
+
+function stopCollection() {
+  stopped = true;
+  log('正在停止...', 'warn');
+}
+
+function downloadData() {
+  const type = document.getElementById('type').value;
+  const json = JSON.stringify(allData, null, 1);
+  const blob = new Blob([json], {type: 'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `okooo_${type}_changes_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  log(`已下载 ${a.download} (${(json.length/1024).toFixed(0)} KB)`, 'ok');
+}
+</script>
+</body>
+</html>
