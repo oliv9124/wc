@@ -1,6 +1,11 @@
 """球球是道 overview odds collector — uses POST JSON API."""
-import requests, json, time, sys
+import argparse
+import json
+import sys
+import time
 from pathlib import Path
+
+import requests
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -26,30 +31,34 @@ DELAY = 1.0
 
 
 def fetch_overview(fid, kind):
-    params = ENDPOINTS[kind]
-    url = f"{BASE}?{params}"
+    url = f"{BASE}?{ENDPOINTS[kind]}"
     try:
         r = requests.post(url, data={"fid": fid}, headers=HEADERS, timeout=30)
         j = r.json()
         if j.get("code", 0) > 0 and j.get("data"):
             return j["data"]
-        else:
-            return None
+        return None
     except Exception as e:
         print(f"    [ERROR] {kind}: {e}")
         return None
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Qiuqiushidao overview collector")
+    parser.add_argument("date", nargs="?", help="Only matches on YYYY-MM-DD")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing files")
+    parser.add_argument("--finished", action="store_true", help="Only finished matches")
+    args = parser.parse_args()
+
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
     matches = config["matches"]
-
-    target_date = sys.argv[1] if len(sys.argv) > 1 else None
-    if target_date:
-        matches = [m for m in matches if m["date"] == target_date]
+    if args.date:
+        matches = [m for m in matches if m["date"] == args.date]
+    if args.finished:
+        matches = [m for m in matches if m.get("status") == "finished"]
 
     if not matches:
-        print("No matches found for the specified date.")
+        print("No matches found.")
         return
 
     print(f"Collecting qiu overview for {len(matches)} matches...")
@@ -61,6 +70,10 @@ def main():
 
         for kind in ["ouzhi", "yazhi", "daxiao"]:
             out_file = OUT_DIR / f"{fid}_{kind}.json"
+            if out_file.exists() and not args.force:
+                rows = len(json.loads(out_file.read_text(encoding="utf-8")).get("rows", []))
+                print(f"    {kind}: skip (exists, {rows} rows)")
+                continue
             data = fetch_overview(fid, kind)
             if data:
                 out_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
